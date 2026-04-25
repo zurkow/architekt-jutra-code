@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")"
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # --- Docker Compose ---
 echo "Ensuring docker-compose services are up..."
@@ -23,15 +23,16 @@ trap cleanup EXIT INT TERM
 
 # --- Host app (Spring Boot) ---
 echo "Starting host app..."
-./mvnw -q spring-boot:run &
+"$ROOT_DIR/mvnw" -q spring-boot:run &
 
 # --- MCP app (Spring Boot) ---
 echo "Starting MCP app..."
-cd mcp-server
+cd "$ROOT_DIR/mcp-server"
 ./mvnw -q spring-boot:run &
+cd "$ROOT_DIR"
 
 # --- Plugins ---
-for dir in plugins/*/; do
+for dir in "$ROOT_DIR"/plugins/*/; do
   if [ -f "$dir/package.json" ]; then
     name=$(basename "$dir")
     echo "Starting plugin: $name"
