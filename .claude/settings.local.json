@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(java|ts|tsx\\)$\")",
+      "Bash(npx vitest *)"
+    ]
+  }
+}

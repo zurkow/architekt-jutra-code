@@ -1,0 +1,27 @@
+{
+  "name": "Logistics",
+  "version": "1.0.0",
+  "url": "http://localhost:3010",
+  "description": "Manages logistics and product delivery",
+  "extensionPoints": [
+    {
+      "type": "menu.main",
+      "label": "Logistyka",
+      "icon": "truck",
+      "path": "/",
+      "priority": 110
+    },
+    {
+      "type": "product.detail.tabs",
+      "label": "Dostawa",
+      "path": "/product-delivery",
+      "priority": 55
+    },
+    {
+      "type": "product.detail.info",
+      "label": "Dostawa",
+      "path": "/product-delivery-info",
+      "priority": 15
+    }
+  ]
+}
