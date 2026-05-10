@@ -83,8 +83,8 @@ export function CustomersPage() {
   }
 
   async function handleSave() {
-    if (!firstName.trim() || !lastName.trim()) {
-      setError("First name and last name are required.");
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      setError("First name, last name, and email are required.");
       return;
     }
     setError(null);
@@ -221,8 +221,8 @@ export function CustomersPage() {
             />
             <input
               className="tc-input"
-              placeholder="Email"
-              aria-label="Email"
+              placeholder="Email *"
+              aria-label="Email (required)"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -296,7 +296,7 @@ export function CustomersPage() {
             <button
               className="tc-primary-button"
               onClick={() => void handleSave()}
-              disabled={saving || !firstName.trim() || !lastName.trim()}
+              disabled={saving || !firstName.trim() || !lastName.trim() || !email.trim()}
             >
               {saving ? "Saving..." : "Save"}
             </button>
