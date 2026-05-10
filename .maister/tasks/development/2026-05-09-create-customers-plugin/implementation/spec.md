@@ -16,7 +16,7 @@ Create a standalone frontend-only plugin at `plugins/customers/` that gives the 
 
 1. (FR-1) Display all customers in a `tc-table` with columns: Name (firstName + lastName combined), Email, Company, City, Actions — loaded via `sdk.thisPlugin.objects.list("customer")` on mount; show loading state while fetching and empty state when zero records exist.
 2. (FR-2) Provide a text search input above the table that filters rows client-side by firstName, lastName, and email (case-insensitive); filter applies in real-time as the user types.
-3. (FR-3) "New Customer" button above the table; clicking it reveals a form section below the table with fields grouped into Personal Data, Company Data, and Address Data sections; firstName and lastName are required, all other fields optional; save via `sdk.thisPlugin.objects.save("customer", crypto.randomUUID(), data)`; Cancel hides the form without saving.
+3. (FR-3) "New Customer" button above the table; clicking it reveals a form section below the table with fields grouped into Personal Data, Company Data, and Address Data sections; firstName, lastName, and email are required, all other fields optional; save via `sdk.thisPlugin.objects.save("customer", crypto.randomUUID(), data)`; Cancel hides the form without saving.
 4. (FR-4) "Edit" button per table row; clicking it reveals the same form section pre-filled with that customer's data; save via `sdk.thisPlugin.objects.save("customer", existingObjectId, data)` (upsert semantics); Cancel hides the form.
 5. (FR-5) "Delete" button per table row; no confirmation dialog; delete via `sdk.thisPlugin.objects.delete("customer", objectId)`; the row is removed from the list after successful deletion.
 6. (FR-6) All SDK calls wrapped in try/catch; display a `tc-error` message on any failure.
@@ -77,7 +77,7 @@ Customer records are stored as plugin objects in the host's `plugin_objects` tab
 - "New Customer" sets `showForm = true`, `editingCustomer = null`, clears all field state.
 - "Edit" on a row sets `showForm = true`, `editingCustomer = customer`, populates all field state from that customer.
 - "Cancel" sets `showForm = false`, `editingCustomer = null`, clears field state.
-- "Save" validates firstName and lastName are non-empty, calls SDK save, reloads the list, then closes the form.
+- "Save" validates firstName, lastName, and email are non-empty, calls SDK save, reloads the list, then closes the form.
 - Only one form instance exists in the DOM; it is conditionally rendered, not toggled per-row.
 
 ### Search / Filter
@@ -126,7 +126,7 @@ Total: 8 files. Zero files modified outside this directory.
 | objectId | string | (SDK identity) | yes (auto-generated) |
 | firstName | string | Personal Data | yes |
 | lastName | string | Personal Data | yes |
-| email | string | Personal Data | no |
+| email | string | Personal Data | yes |
 | phone | string | Personal Data | no |
 | companyName | string | Company Data | no |
 | taxId | string | Company Data | no |
@@ -171,7 +171,8 @@ Total: 8 files. Zero files modified outside this directory.
 
 - All event handlers that call async functions use the `void` prefix: `onClick={() => void handleSave()}`
 - Load function extracted as `useCallback` to be referenced in `useEffect` dependency array (mirrors warehouse pattern)
-- Required field validation before SDK call: `if (!firstName.trim() || !lastName.trim()) return;`
+- Required field validation before SDK call: `if (!firstName.trim() || !lastName.trim() || !email.trim()) return;`
+- Save button reactively disabled: `disabled={saving || !firstName.trim() || !lastName.trim() || !email.trim()}`
 - `strict: true` is enforced via tsconfig; no `any` types, no non-null assertions except `document.getElementById("root")!` in main.tsx
 
 ### Testing Approach
@@ -192,7 +193,6 @@ Tests are out of scope for this task. Acceptance criterion 13 is removed. Tests 
 - Backend JPA entity or Spring Boot controller — SDK objects API is sufficient
 - Product linking — no `entityType`/`entityId` binding needed
 - Additional extension points (`product.detail.tabs`, `product.list.filters`, `product.detail.info`)
-- Confirmation dialog on delete — consistent with warehouse plugin pattern which also omits it
 - Pagination — client-side search is sufficient at this scale
 - Custom CSS file — all styling via host `tc-*` classes
 
@@ -202,8 +202,8 @@ Tests are out of scope for this task. Acceptance criterion 13 is removed. Tests 
 2. Plugin registers successfully via `PUT /api/plugins/customers/manifest` and appears in the host sidebar as "Customers".
 3. Customer list loads on page mount; loading state visible while fetching.
 4. Empty state message displayed when no customers exist.
-5. Creating a customer with firstName + lastName saves correctly and the new row appears in the table.
-6. Attempting to save with firstName or lastName blank does not call the SDK.
+5. Creating a customer with firstName + lastName + email saves correctly and the new row appears in the table.
+6. Attempting to save with firstName, lastName, or email blank does not call the SDK; Save button is disabled when any required field is empty.
 7. Editing a customer pre-fills the form and saves via upsert to the existing objectId.
 8. Deleting a customer removes the row immediately after SDK confirmation.
 9. Search input filters the visible rows in real-time by name and email.
