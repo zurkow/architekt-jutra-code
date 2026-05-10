@@ -1,0 +1,147 @@
+orchestrator:
+  started_phase: phase-1
+  completed_phases:
+    - phase-1
+    - phase-2
+    - phase-5
+    - phase-6
+    - phase-7
+    - phase-8
+    - phase-10
+    - phase-11
+    - phase-13
+  failed_phases: []
+
+  auto_fix_attempts:
+    phase-1: 0
+    phase-2: 0
+    phase-5: 0
+    phase-7: 0
+    phase-8: 0
+    phase-11: 0
+
+  options:
+    spec_audit_enabled: true
+    skip_test_suite: true
+    e2e_enabled: false
+    user_docs_enabled: true
+    code_review_enabled: true
+    pragmatic_review_enabled: false
+    reality_check_enabled: false
+    production_check_enabled: false
+
+  created: "2026-05-09T00:00:00Z"
+  updated: "2026-05-09T00:00:00Z"
+  task_path: .maister/tasks/development/2026-05-09-create-customers-plugin
+
+  task_ids:
+    phase-1: "1"
+    phase-2: "2"
+    phase-5: "3"
+    phase-6: "4"
+    phase-7: "5"
+    phase-8: "6"
+    phase-10: "7"
+    phase-11: "8"
+    phase-14: "9"
+
+task:
+  title: Create Customers Plugin
+  description: >
+    Create plugin customers in directory: plugins/customers/. Use port 3011.
+    Customer should have personal data, company data, address data.
+    For now do not use any orders.
+  status: completed
+  tags: ["plugin", "customers", "new-feature"]
+  priority: medium
+
+task_context:
+  risk_level: low
+  clarifications_resolved: true
+  scope_expanded: false
+  tech_clarified: null
+  architecture_decision: null
+  task_characteristics:
+    has_reproducible_defect: false
+    modifies_existing_code: false
+    creates_new_entities: true
+    involves_data_operations: true
+    ui_heavy: true
+  research_reference:
+    path: null
+    research_question: null
+    research_type: null
+    confidence_level: null
+  project_context:
+    project_doc_paths:
+      - .maister/docs/project/tech-stack.md
+      - .maister/docs/project/architecture.md
+
+  phase_summaries:
+    research:
+      summary: null
+      key_findings: []
+      recommended_approach: null
+    codebase_analysis:
+      key_files:
+        - plugins/warehouse/manifest.json
+        - plugins/warehouse/src/pages/WarehousePage.tsx
+        - plugins/warehouse/src/domain.ts
+        - plugins/sdk.ts
+        - plugins/warehouse/vite.config.ts
+      primary_language: TypeScript (frontend plugin, React+Vite)
+      summary: >
+        Greenfield customers plugin following established warehouse plugin patterns.
+        Port 3011, custom object storage via SDK, menu.main extension point.
+        Four reference plugins exist (warehouse, box-size, ai-description, logistics).
+        Warehouse plugin is best template. No backend changes required — plugin_objects
+        table already exists. Risk level: low.
+    clarifications:
+      - "Frontend-only plugin (no backend changes)"
+      - "Extension point: menu.main only"
+      - "Fields: firstName, lastName, email, phone / companyName, taxId, website / street, city, postalCode, country"
+    gap_analysis:
+      integration_points:
+        - "menu.main extension point via manifest.json"
+        - "PUT /api/plugins/customers/manifest registration"
+        - "SDK objects.list/save/delete for customer object type"
+      summary: >
+        Greenfield plugin — 8 files to create, zero changes to existing code.
+        All 4 CRUD operations must be built. ui_heavy=true (9-field form, table).
+        Two important UX decisions: edit pattern and optional fields handling.
+    scope_clarifications:
+      scope_expanded: false
+      summary: null
+    ui_mockups:
+      components_designed: []
+      summary: null
+    specification:
+      summary: >
+        Frontend-only customers plugin with full CRUD, client-side search, and menu.main
+        sidebar integration on port 3011. 8 files to create, 6 functional requirements,
+        2 new source files (domain.ts + CustomersPage.tsx), 9 reusable warehouse components.
+    architecture_decision:
+      decision: null
+      summary: null
+
+verification_context:
+  last_status: passed_with_issues
+  issues_found:
+    - "W3: silent validation return (fixed)"
+    - "W4: no saving guard (fixed)"
+    - "W5: destructive delete no confirmation (fixed)"
+    - "W6: redundant PluginObject[] annotation (fixed)"
+    - "W7: getSDK() called 3 times (fixed)"
+    - "Accessibility: missing aria-label on 12 inputs (fixed)"
+    - "W1: flat form state - design concern (deferred)"
+    - "W2: full list reload per mutation - design concern (deferred)"
+  fixes_applied:
+    - "Added setError validation message before required-field guard return"
+    - "Added saving state with disabled buttons and Saving... label"
+    - "Added window.confirm before delete"
+    - "Removed redundant PluginObject[] type annotation and unused import"
+    - "Consolidated getSDK() to single call at component top"
+    - "Added aria-label to all 12 form and search inputs"
+  decisions_made:
+    - "W1 (flat form state) and W2 (full reload) deferred as follow-up tasks"
+  reverify_count: 0

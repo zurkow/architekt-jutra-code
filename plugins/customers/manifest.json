@@ -1,0 +1,15 @@
+{
+  "name": "Customers",
+  "version": "1.0.0",
+  "url": "http://localhost:3011",
+  "description": "Manages business client records",
+  "extensionPoints": [
+    {
+      "type": "menu.main",
+      "label": "Customers",
+      "icon": "users",
+      "path": "/",
+      "priority": 110
+    }
+  ]
+}
