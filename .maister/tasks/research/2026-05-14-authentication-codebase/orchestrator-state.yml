@@ -1,0 +1,42 @@
+orchestrator:
+  mode: interactive
+  started_phase: phase-1
+  completed_phases: []
+  failed_phases: []
+  auto_fix_attempts:
+    phase-1: 0
+    phase-2: 0
+    phase-3: 0
+  created: "2026-05-14T00:00:00Z"
+  updated: "2026-05-14T00:00:00Z"
+  task_path: .maister/tasks/research/2026-05-14-authentication-codebase
+
+task:
+  title: "How does authentication work in this codebase?"
+  description: "Research the authentication mechanisms, flows, and implementation details across the codebase"
+  status: in_progress
+  tags: [research, authentication, security]
+  priority: medium
+
+research_context:
+  research_type: internal
+  research_question: "How does authentication work in this codebase?"
+  scope:
+    included:
+      - Authentication configuration and setup
+      - JWT token handling (creation, validation, parsing)
+      - Security filter chain and middleware
+      - Login/logout endpoints and flows
+      - Permission and authorization checks
+      - Plugin authentication mechanisms
+    excluded:
+      - External authentication providers not used in this project
+      - Future planned authentication changes
+    constraints:
+      - Focus on current implementation only
+  methodology: []
+  sources: []
+  gathering_strategy:
+    categories: []
+    count: 4
+    source: planner

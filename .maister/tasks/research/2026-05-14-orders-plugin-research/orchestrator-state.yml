@@ -1,0 +1,22 @@
+workflow_type: research-gather
+research_context:
+  research_type: "internal"
+  research_question: "how does the orders plugin work?"
+  scope:
+    included:
+      - Orders plugin task spec and state
+      - Existing plugin infrastructure (PluginDescriptor, PluginObject, PluginController, etc.)
+      - Plugin data storage patterns
+      - Customer module (referenced entity)
+      - Liquibase migrations
+    excluded:
+      - External competitors / market
+      - Frontend details
+    constraints:
+      - Plugin not yet implemented — research covers planned architecture + existing plugin infrastructure
+  methodology: []
+  sources: []
+  gathering_strategy:
+    categories: []
+    count: 0
+    source: "planner"

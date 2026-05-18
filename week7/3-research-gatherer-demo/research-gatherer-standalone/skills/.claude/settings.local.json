@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\.maister\\\\tasks\\\\research\\\\2026-05-14-authentication-codebase\\\\planning\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\.maister\\\\tasks\\\\research\\\\2026-05-14-authentication-codebase\\\\analysis\\\\findings\")",
+      "Bash(Write-Host \"Directories created\")"
+    ]
+  }
+}
