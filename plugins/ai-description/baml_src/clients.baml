@@ -1,7 +1,14 @@
-// LLM requests go through LiteLLM proxy which handles:
-// - API key management (keys live in litellm/.env, not here)
-// - PII filtering via Presidio guardrails
-// - Observability via Langfuse
+// Primary: Anthropic API (direct)
+client<llm> AnthropicProvider {
+  provider anthropic
+  options {
+    model "claude-haiku-4-5-20251001"
+    api_key env.ANTHROPIC_API_KEY
+  }
+}
+
+// Fallback: LiteLLM proxy (handles PII filtering via Presidio, observability via Langfuse)
+// API key management lives in litellm/.env, not here.
 client<llm> LiteLlmProvider {
   provider openai
   options {
@@ -14,6 +21,6 @@ client<llm> LiteLlmProvider {
 client<llm> LlmProvider {
   provider fallback
   options {
-    strategy [LiteLlmProvider]
+    strategy [AnthropicProvider, LiteLlmProvider]
   }
 }

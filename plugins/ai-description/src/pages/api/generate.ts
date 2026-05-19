@@ -68,9 +68,6 @@ export default async function handler(
     return res.status(200).json(dataToSave);
   } catch (err) {
     console.error("Generate failed:", err);
-    const message = err instanceof Error ? err.message : String(err);
-    const statusMatch = message.match(/Host API error (\d+)/);
-    const status = statusMatch ? parseInt(statusMatch[1], 10) : 500;
-    return res.status(status).json({ error: message });
+    return res.status(500).json({ error: "Failed to generate product description." });
   }
 }

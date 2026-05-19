@@ -177,4 +177,34 @@ describe("POST /api/generate", () => {
 
     expect(res._getStatusCode()).toBe(500);
   });
+
+  test("generate_pluginNotRegistered_returns500WithoutLeakingInternalPath", async () => {
+    mockGetProduct.mockResolvedValue({
+      name: "Test Product",
+      description: "A test product",
+    });
+    mockGenerateProductDescription.mockResolvedValue({
+      recommendation: "Good",
+      targetCustomer: "Everyone",
+      pros: ["Nice"],
+      cons: ["None"],
+    });
+    mockObjectsSave.mockRejectedValue(
+      new Error(
+        'Host API error 404 PUT /api/plugins/ai-description/objects/description/4?entityType=PRODUCT&entityId=4: {"message":"Plugin with id ai-description not found"}'
+      )
+    );
+
+    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+      method: "POST",
+      body: { productId: "4" },
+    });
+
+    await handler(req, res);
+
+    expect(res._getStatusCode()).toBe(500);
+    const body = JSON.parse(res._getData());
+    expect(body.error).not.toContain("/api/plugins/");
+    expect(body.error).not.toContain("ai-description not found");
+  });
 });
