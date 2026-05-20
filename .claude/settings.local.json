@@ -2,7 +2,38 @@
   "permissions": {
     "allow": [
       "Bash(grep -E \"\\\\.\\(java|ts|tsx\\)$\")",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\plugins\" -Directory)",
+      "Bash(New-Item *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(node --experimental-vm-modules ./node_modules/jest/bin/jest.js --no-coverage)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\.maister\\\\tasks\\\\development\\\\2026-05-19-cart-recommend-button\\\\analysis\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\.maister\\\\tasks\\\\development\\\\2026-05-19-cart-recommend-button\\\\implementation\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\.maister\\\\tasks\\\\development\\\\2026-05-19-cart-recommend-button\\\\verification\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\.maister\\\\tasks\\\\development\\\\2026-05-19-cart-recommend-button\\\\documentation\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\" -Recurse -Name)",
+      "Bash(Select-Object -First 50)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\" -Recurse -Directory | Select-Object -First 30 | ForEach-Object { $_.FullName })",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\plugins\" -Directory | ForEach-Object { $_.Name })",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\" -Recurse -Directory -Depth 2)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Remove-Item -Force \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\plugins\\\\koszyk\\\\vite.config.ts\")",
+      "Bash(Remove-Item -Force \"C:\\\\Users\\\\piotr\\\\IdeaProjects\\\\architekt-jutra-code\\\\plugins\\\\koszyk\\\\src\\\\main.tsx\")",
+      "Bash(npm install *)",
+      "Bash(Read \"C:\\\\Users\\\\piotr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-piotr-IdeaProjects-architekt-jutra-code\\\\625730fc-ed44-4752-9057-7d6c7ee9d5a7\\\\tasks\\\\ber4xac5r.output\")",
+      "Bash(node --experimental-vm-modules node_modules/.bin/jest --testPathPattern=\"migration-smoke\")",
+      "Bash(node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=\"migration-smoke\")",
+      "Bash(node --experimental-vm-modules node_modules/jest/bin/jest.js)",
+      "Bash(node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=\"migration-smoke\" --verbose)",
+      "Bash(node node_modules/jest/bin/jest.js --version)",
+      "PowerShell(New-Item *)",
+      "Bash(node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=CartPage)"
     ]
   }
 }

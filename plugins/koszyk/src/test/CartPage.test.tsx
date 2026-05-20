@@ -1,15 +1,19 @@
-import { vi } from "vitest";
+/**
+ * @jest-environment jsdom
+ */
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { CartPage } from "../pages/CartPage";
 
-const mockSave = vi.fn();
-const mockDelete = vi.fn();
-const mockList = vi.fn();
-const mockFetch = vi.fn();
-const mockGetProducts = vi.fn();
+const mockSave = jest.fn();
+const mockDelete = jest.fn();
+const mockList = jest.fn();
+const mockFetch = jest.fn();
+const mockGetProducts = jest.fn();
+const mockGetToken = jest.fn();
+const mockFetchGlobal = jest.fn();
 
-vi.mock("../../../sdk", () => ({
+jest.mock("../../../sdk", () => ({
   getSDK: () => ({
     thisPlugin: {
       objects: {
@@ -21,6 +25,7 @@ vi.mock("../../../sdk", () => ({
     hostApp: {
       fetch: mockFetch,
       getProducts: mockGetProducts,
+      getToken: mockGetToken,
     },
   }),
 }));
@@ -30,10 +35,12 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
-  vi.resetAllMocks();
+  jest.resetAllMocks();
   mockList.mockResolvedValue([]);
   mockFetch.mockResolvedValue({ body: JSON.stringify([]) });
   mockGetProducts.mockResolvedValue([]);
+  mockGetToken.mockResolvedValue("token-abc");
+  global.fetch = mockFetchGlobal as typeof fetch;
 });
 
 describe("CartPage", () => {
@@ -154,7 +161,7 @@ describe("CartPage", () => {
     });
     mockDelete.mockResolvedValue(undefined);
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    jest.spyOn(window, "confirm").mockReturnValue(true);
 
     renderWithProviders(<CartPage />);
 
@@ -377,7 +384,7 @@ describe("CartPage", () => {
     });
     mockDelete.mockResolvedValue(undefined);
 
-    const confirmSpy = vi.spyOn(window, "confirm");
+    const confirmSpy = jest.spyOn(window, "confirm");
 
     renderWithProviders(<CartPage />);
 
@@ -437,5 +444,245 @@ describe("CartPage", () => {
 
     const [, , data] = mockSave.mock.calls[0] as [string, string, Record<string, unknown>];
     expect(data.productName).toBe("Widget");
+  });
+
+  it("recommendButton_disabledWhenNoItemsInCart", async () => {
+    const cartObject = {
+      objectId: "cart-1",
+      objectType: "cart",
+      data: {
+        customerId: "cust-1",
+        customerName: "Jan Kowalski",
+        status: "ACTIVE",
+        createdAt: "2026-05-01T10:00:00Z",
+      },
+    };
+    mockList.mockImplementation((objectType: string) => {
+      if (objectType === "cart") return Promise.resolve([cartObject]);
+      return Promise.resolve([]); // no cartItems
+    });
+
+    renderWithProviders(<CartPage />);
+    await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
+
+    // Select the cart row
+    fireEvent.click(screen.getByText("Jan Kowalski"));
+
+    await waitFor(() => expect(screen.getByText("Rekomenduj")).toBeInTheDocument());
+
+    const recommendButton = screen.getByText("Rekomenduj");
+    expect(recommendButton).toBeDisabled();
+  });
+
+  it("recommendButton_disabledWhenNoCartSelected", async () => {
+    // No carts — cart items section is not shown at all
+    mockList.mockResolvedValue([]);
+
+    renderWithProviders(<CartPage />);
+    await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
+
+    // With no cart selected, the items section (and Rekomenduj button) should not exist
+    expect(screen.queryByText("Rekomenduj")).not.toBeInTheDocument();
+  });
+
+  it("recommendButton_triggersCorrectPayload", async () => {
+    const cartItem = {
+      objectId: "cart-1-42",
+      objectType: "cartItem",
+      data: {
+        cartId: "cart-1",
+        productId: 42,
+        productName: "Widget",
+        quantity: 1,
+        unitPrice: 9.99,
+      },
+    };
+    mockList.mockImplementation((objectType: string, options?: { filter?: string }) => {
+      if (objectType === "cart") {
+        return Promise.resolve([
+          {
+            objectId: "cart-1",
+            objectType: "cart",
+            data: {
+              customerId: "cust-1",
+              customerName: "Jan Kowalski",
+              status: "ACTIVE",
+              createdAt: "2026-05-01T10:00:00Z",
+            },
+          },
+        ]);
+      }
+      if (objectType === "cartItem" && options?.filter === "cartId:eq:cart-1") {
+        return Promise.resolve([cartItem]);
+      }
+      return Promise.resolve([]);
+    });
+    mockFetchGlobal.mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+
+    renderWithProviders(<CartPage />);
+    await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Jan Kowalski"));
+    await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Rekomenduj"));
+
+    await waitFor(() => expect(mockFetchGlobal).toHaveBeenCalled());
+
+    const [url, init] = mockFetchGlobal.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/recommend");
+    const body = JSON.parse(init.body as string) as { cartItems: unknown[] };
+    expect(body.cartItems).toHaveLength(1);
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBe("Bearer token-abc");
+  });
+
+  it("recommendationsPanel_rendersAfterSuccess", async () => {
+    const mockRecs = [
+      { productId: 10, productName: "Product A", productDescription: "Desc A", productPrice: 49.99, reasoning: "Good match" },
+      { productId: 11, productName: "Product B", productDescription: "Desc B", productPrice: 29.99, reasoning: "Complementary" },
+      { productId: 12, productName: "Product C", productDescription: "Desc C", productPrice: 19.99, reasoning: "Popular choice" },
+    ];
+    mockList.mockImplementation((objectType: string, options?: { filter?: string }) => {
+      if (objectType === "cart") {
+        return Promise.resolve([
+          {
+            objectId: "cart-1",
+            objectType: "cart",
+            data: {
+              customerId: "cust-1",
+              customerName: "Jan Kowalski",
+              status: "ACTIVE",
+              createdAt: "2026-05-01T10:00:00Z",
+            },
+          },
+        ]);
+      }
+      if (objectType === "cartItem" && options?.filter === "cartId:eq:cart-1") {
+        return Promise.resolve([
+          {
+            objectId: "cart-1-5",
+            objectType: "cartItem",
+            data: { cartId: "cart-1", productId: 5, productName: "Widget", quantity: 1, unitPrice: 9.99 },
+          },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    mockFetchGlobal.mockResolvedValue({ ok: true, json: async () => mockRecs });
+
+    renderWithProviders(<CartPage />);
+    await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Jan Kowalski"));
+    await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Rekomenduj"));
+
+    await waitFor(() => expect(screen.getByText("Product A")).toBeInTheDocument());
+    expect(screen.getByText("Product B")).toBeInTheDocument();
+    expect(screen.getByText("Product C")).toBeInTheDocument();
+    expect(screen.getByText("Good match")).toBeInTheDocument();
+    expect(screen.getByText("Desc A")).toBeInTheDocument();
+    // Prices rendered
+    expect(screen.getByText("Cena: 49.99")).toBeInTheDocument();
+  });
+
+  it("errorMessage_shownOnFetchFailure", async () => {
+    mockList.mockImplementation((objectType: string, options?: { filter?: string }) => {
+      if (objectType === "cart") {
+        return Promise.resolve([
+          {
+            objectId: "cart-1",
+            objectType: "cart",
+            data: {
+              customerId: "cust-1",
+              customerName: "Jan Kowalski",
+              status: "ACTIVE",
+              createdAt: "2026-05-01T10:00:00Z",
+            },
+          },
+        ]);
+      }
+      if (objectType === "cartItem" && options?.filter === "cartId:eq:cart-1") {
+        return Promise.resolve([
+          {
+            objectId: "cart-1-5",
+            objectType: "cartItem",
+            data: { cartId: "cart-1", productId: 5, productName: "Widget", quantity: 1, unitPrice: 9.99 },
+          },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    mockFetchGlobal.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: "AI service unavailable" }),
+    });
+
+    renderWithProviders(<CartPage />);
+    await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Jan Kowalski"));
+    await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Rekomenduj"));
+
+    await waitFor(() => {
+      const errorEl = document.querySelector(".tc-error");
+      expect(errorEl).toBeInTheDocument();
+      expect(errorEl!.textContent).toBe("AI service unavailable");
+    });
+  });
+
+  it("recommendations_resetWhenSelectedCartChanges", async () => {
+    const mockRecs = [
+      { productId: 10, productName: "Product A", productDescription: "Desc A", productPrice: 49.99, reasoning: "Good match" },
+    ];
+    mockList.mockImplementation((objectType: string, options?: { filter?: string }) => {
+      if (objectType === "cart") {
+        return Promise.resolve([
+          {
+            objectId: "cart-1",
+            objectType: "cart",
+            data: {
+              customerId: "cust-1",
+              customerName: "Jan Kowalski",
+              status: "ACTIVE",
+              createdAt: "2026-05-01T10:00:00Z",
+            },
+          },
+        ]);
+      }
+      if (objectType === "cartItem" && options?.filter === "cartId:eq:cart-1") {
+        return Promise.resolve([
+          {
+            objectId: "cart-1-5",
+            objectType: "cartItem",
+            data: { cartId: "cart-1", productId: 5, productName: "Widget", quantity: 1, unitPrice: 9.99 },
+          },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    mockFetchGlobal.mockResolvedValue({ ok: true, json: async () => mockRecs });
+
+    renderWithProviders(<CartPage />);
+    await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
+
+    // Select cart and get recommendations
+    fireEvent.click(screen.getByText("Jan Kowalski"));
+    await waitFor(() => expect(screen.getByText("Widget")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Rekomenduj"));
+    await waitFor(() => expect(screen.getByText("Product A")).toBeInTheDocument());
+
+    // Deselect cart by clicking the same row again
+    fireEvent.click(screen.getByText("Jan Kowalski"));
+
+    // Recommendations panel should disappear
+    await waitFor(() => expect(screen.queryByText("Product A")).not.toBeInTheDocument());
   });
 });

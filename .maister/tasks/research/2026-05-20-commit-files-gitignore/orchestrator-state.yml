@@ -1,0 +1,42 @@
+orchestrator:
+  started_phase: phase-1
+  completed_phases: []
+  failed_phases: []
+  auto_fix_attempts:
+    phase-1: 0
+    phase-2: 0
+  options:
+    brainstorming_enabled: null
+    design_enabled: null
+  created: "2026-05-20T00:00:00Z"
+  updated: "2026-05-20T00:00:00Z"
+  task_path: .maister/tasks/research/2026-05-20-commit-files-gitignore
+
+task:
+  title: "Which files to commit and gitignore"
+  description: "Research which files should be committed vs gitignored in the koszyk plugin and project. Set .gitignore entries properly."
+  status: in_progress
+  tags: [git, gitignore, koszyk, configuration]
+  priority: medium
+
+research_context:
+  research_type: technical
+  research_question: "Which files from the current git status should be committed vs gitignored? How should .gitignore be configured?"
+  scope:
+    included:
+      - git status output
+      - existing .gitignore files
+      - project conventions for env files and generated artifacts
+    excluded:
+      - CI/CD pipeline changes
+    constraints:
+      - Must not commit secrets or API keys
+  methodology: []
+  sources: []
+  confidence_level: null
+  gathering_strategy: null
+  phase_summaries: {}
+
+options:
+  brainstorming_enabled: null
+  design_enabled: null

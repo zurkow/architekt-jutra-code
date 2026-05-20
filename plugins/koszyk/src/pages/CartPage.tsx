@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { getSDK } from "../../../sdk";
 import { toCart, toCartItem, toCustomerSummary } from "../domain";
-import type { Cart, CartItem, CustomerSummary, Product } from "../domain";
+import type { Cart, CartItem, CustomerSummary, Product, ProductRecommendation } from "../domain";
 
 export function CartPage() {
   // Step 3.3 — state declarations
@@ -21,6 +21,9 @@ export function CartPage() {
   const [newProductId, setNewProductId] = useState("");
   const [newQuantity, setNewQuantity] = useState(1);
   const [newUnitPrice, setNewUnitPrice] = useState(0);
+
+  const [recommendations, setRecommendations] = useState<ProductRecommendation[] | null>(null);
+  const [recommending, setRecommending] = useState(false);
 
   // Step 3.4 — data-loading callbacks
   const loadCarts = useCallback(async () => {
@@ -77,8 +80,10 @@ export function CartPage() {
 
   useEffect(() => {
     if (selectedCartId) {
+      setRecommendations(null);
       void loadCartItems(selectedCartId);
     } else {
+      setRecommendations(null);
       setCartItems([]);
     }
   }, [selectedCartId, loadCartItems]);
@@ -145,6 +150,23 @@ export function CartPage() {
   }
 
   // Step 3.6 — cart item mutation handlers
+  async function addProductToCart(productId: number, productName: string, unitPrice: number) {
+    if (!selectedCartId) return;
+    const sdk = getSDK();
+    await sdk.thisPlugin.objects.save(
+      "cartItem",
+      `${selectedCartId}-${productId}`,
+      {
+        cartId: selectedCartId,
+        productId,
+        productName,
+        quantity: 1,
+        unitPrice,
+      },
+    );
+    await loadCartItems(selectedCartId);
+  }
+
   async function handleAddItem() {
     if (!selectedCartId || !newProductId || newQuantity < 1) return;
     setError(null);
@@ -172,6 +194,36 @@ export function CartPage() {
     }
   }
 
+  async function handleRecommend() {
+    const currentCartItems = cartItems.filter((i) => i.cartId === selectedCartId);
+    if (!selectedCartId || currentCartItems.length === 0) return;
+    setError(null);
+    setRecommending(true);
+    try {
+      const sdk = getSDK();
+      const token = await sdk.hostApp.getToken();
+      const response = await fetch("/api/recommend", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ cartItems: currentCartItems }),
+      });
+      if (!response.ok) {
+        const body = (await response.json()) as { error?: string };
+        setError(body.error ?? "Failed to get recommendations.");
+        return;
+      }
+      const result = (await response.json()) as ProductRecommendation[];
+      setRecommendations(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to get recommendations.");
+    } finally {
+      setRecommending(false);
+    }
+  }
+
   async function handleRemoveItem(item: CartItem) {
     setError(null);
     try {
@@ -192,6 +244,7 @@ export function CartPage() {
   if (loading) return <p>Loading...</p>;
 
   const selectedCart = carts.find((c) => c.objectId === selectedCartId);
+  const currentCartItems = cartItems.filter((i) => i.cartId === selectedCartId);
 
   return (
     <div className="tc-plugin" style={{ padding: "1rem", maxWidth: 800 }}>
@@ -332,6 +385,13 @@ export function CartPage() {
             >
               Dodaj produkt
             </button>
+            <button
+              className="tc-primary-button"
+              onClick={() => void handleRecommend()}
+              disabled={!selectedCartId || currentCartItems.length === 0 || recommending}
+            >
+              {recommending ? "Generowanie..." : "Rekomenduj"}
+            </button>
           </div>
 
           {/* Step 3.10 — inline add item form */}
@@ -375,7 +435,7 @@ export function CartPage() {
             </div>
           )}
 
-          {cartItems.filter((i) => i.cartId === selectedCartId).length === 0 ? (
+          {currentCartItems.length === 0 ? (
             <p>Brak pozycji w koszyku.</p>
           ) : (
             <table className="tc-table">
@@ -388,26 +448,44 @@ export function CartPage() {
                 </tr>
               </thead>
               <tbody>
-                {cartItems
-                  .filter((i) => i.cartId === selectedCartId)
-                  .map((item) => (
-                    <tr key={item.objectId}>
-                      <td>{item.productName}</td>
-                      <td align="right">{item.quantity}</td>
-                      <td align="right">{item.unitPrice}</td>
-                      <td>
-                        <button
-                          className="tc-ghost-button tc-ghost-button--danger"
-                          onClick={() => void handleRemoveItem(item)}
-                        >
-                          Usuń
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                {currentCartItems.map((item) => (
+                  <tr key={item.objectId}>
+                    <td>{item.productName}</td>
+                    <td align="right">{item.quantity}</td>
+                    <td align="right">{item.unitPrice}</td>
+                    <td>
+                      <button
+                        className="tc-ghost-button tc-ghost-button--danger"
+                        onClick={() => void handleRemoveItem(item)}
+                      >
+                        Usuń
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}
+        </section>
+      )}
+
+      {recommendations !== null && (
+        <section className="tc-section">
+          <h3>Rekomendacje AI</h3>
+          {recommendations.map((rec) => (
+            <div key={rec.productId} className="tc-card" style={{ padding: "1rem", marginBottom: "0.5rem" }}>
+              <strong>{rec.productName}</strong>
+              <p>{rec.productDescription}</p>
+              <p>Cena: {rec.productPrice}</p>
+              <p><em>{rec.reasoning}</em></p>
+              <button
+                className="tc-ghost-button"
+                onClick={() => void addProductToCart(rec.productId, rec.productName, rec.productPrice)}
+              >
+                Dodaj do koszyka
+              </button>
+            </div>
+          ))}
         </section>
       )}
     </div>
